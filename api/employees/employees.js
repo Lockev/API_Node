@@ -3,25 +3,21 @@ const router = express.Router();
 
 router.get("/", (req, res) => {
   // API De recherche des utilisateurs
-  req.sql.query("SELECT * FROM book", (error, result) => {
+  req.sql.query("SELECT * FROM employees", (error, result) => {
     let data = [];
-    result.map(ele => data.push(ele.title));
+    result.map(ele => data.push(ele.name));
     res.json({
-      title: data
+      name: data
     });
   });
 });
 
 router.post("/", (req, res) => {
   req.sql.query(
-    "INSERT INTO book SET title = ?, author = ?, description = ?, price = ?, stock = ?",
-    [req.body.title, req.body.author, req.body.description, req.body.price, req.body.stock],
+    "INSERT INTO employees SET name = ?, salary = ?, seniority = ?",
+    [req.body.name, req.body.salary, req.body.seniority],
     (error, data) => {
-      req.sql.query("SELECT * FROM book WHERE id = ?", [data.insertId], (error, data) => {
-        resp_data = {};
-        resp_data.test = data;
-        res.json(resp_data);
-      });
+      
     }
   );
 });
