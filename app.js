@@ -25,5 +25,8 @@ app.use(version + "employees/", employeesRouter);
 // const projectsRouter = require("./api/projects/projects");
 // app.use(version + "projects/", projectsRouter);
 
+// const projectsRouter = require("./api/reset/reset");
+// app.use(version + "reset/", projectsRouter);
+
 // Exporte app vers tout les autres fichiers
 module.exports = app;
