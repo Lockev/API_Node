@@ -16,17 +16,17 @@ app.use(bodyParser.json());
 
 // Apply routes to App
 const version = "/api/";
+const clientsRouter = require("./api/clients/clients");
+app.use(version + "clients/", clientsRouter);
+
 const employeesRouter = require("./api/employees/employees");
 app.use(version + "employees/", employeesRouter);
 
-// const clientsRouter = require("./api/clients/clients");
-// app.use(version + "clients/", clientsRouter);
+const projectsRouter = require("./api/projects/projects");
+app.use(version + "projects/", projectsRouter);
 
-// const projectsRouter = require("./api/projects/projects");
-// app.use(version + "projects/", projectsRouter);
-
-// const projectsRouter = require("./api/reset/reset");
-// app.use(version + "reset/", projectsRouter);
+// const resetRouter = require("./api/reset/reset");
+// app.use(version + "reset/", resetRouter);
 
 // Exporte app vers tout les autres fichiers
 module.exports = app;
