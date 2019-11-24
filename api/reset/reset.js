@@ -1,14 +1,17 @@
 const express = require("express");
-const router = express.Router();
+const routerReset = express.Router();
 
-router.get("/", (req, res) => {
+routerReset.delete("/", (req, res) => {
   // RESET DE TOUTES LES TABLES DE LA BDD
-  req.sql.query("TRUNCATE FROM employees"),
-    req.sql.query("TRUNCATE FROM clients"),
-    req.sql.query("TRUNCATE FROM projects"),
-    (error, result) => {
-      res.json({
-        status: "success"
+  req.sql.query("TRUNCATE TABLE employees", (error, result) => {
+    req.sql.query("TRUNCATE TABLE clients", (error, result) => {
+      req.sql.query("TRUNCATE TABLE projects", (error, result) => {
+        res.json({
+          status: "success"
+        });
       });
-    };
+    });
+  });
 });
+
+module.exports = routerReset;

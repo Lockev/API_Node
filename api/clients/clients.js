@@ -54,21 +54,36 @@ routerClients.post("/", (req, res) => {
 routerClients.put("/", (req, res) => {
   let missingInfo = [];
   if (req.body.name !== undefined) {
-    // On check que l'on a le nom
-    if (req.body.contact !== undefined) {
-      // Si on n'update pas le contact
-      req.sql.query(
-        "UPDATE clients SET contact = '" + req.body.contact + "' WHERE name='" + req.body.name + "'",
-        [req.body.name, req.body.contact],
-        (error, result) => {
-          res.json({
-            status: "success"
-          });
+    // On check que l'on a un nom
+    req.sql.query("SELECT * FROM clients WHERE name='" + req.body.name + "'", [req.body.name], (error, result) => {
+      // On verifie que le nom donné a été trouvé dans la BDD
+      let data = [];
+      result.map(ele => data.push(ele));
+
+      if (data[0] !== undefined) {
+        // Le nom a été trouvé, on effectue la requete
+        if (req.body.contact !== undefined) {
+          // Si on n'update pas le contact
+          req.sql.query(
+            "UPDATE clients SET contact = '" + req.body.contact + "' WHERE name='" + req.body.name + "'",
+            [req.body.name, req.body.contact],
+            (error, result) => {
+              res.json({
+                status: "success"
+              });
+            }
+          );
         }
-      );
-    }
+        // Si le nom donné n'est pas trouvé en BDD
+      } else {
+        res.json({
+          status: "failure",
+          reason: "name given is not in database"
+        });
+      }
+    });
   } else {
-    // On throw une erreur si on ne l'a pas
+    // On throw une erreur si aucun nom n'a été donné
     missingInfo.push("name");
     res.json({
       status: "failure",
@@ -83,12 +98,27 @@ routerClients.delete("/", (req, res) => {
     missingInfo.push("name");
   }
   if (missingInfo.length == 0) {
-    req.sql.query("DELETE FROM clients WHERE name='" + req.body.name + "'", (error, result) => {
-      req.sql.query("DELETE FROM projects WHERE client='" + req.body.name + "'", (error, result) => {
-        res.json({
-          status: "success"
+    req.sql.query("SELECT * FROM clients WHERE name='" + req.body.name + "'", [req.body.name], (error, result) => {
+      // On verifie que le nom donné a été trouvé dans la BDD
+      let data = [];
+      result.map(ele => data.push(ele));
+
+      if (data[0] !== undefined) {
+        // Le nom a été trouvé, on effectue la requete
+        req.sql.query("DELETE FROM clients WHERE name='" + req.body.name + "'", (error, result) => {
+          req.sql.query("DELETE FROM projects WHERE client='" + req.body.name + "'", (error, result) => {
+            res.json({
+              status: "success"
+            });
+          });
         });
-      });
+        // Si le nom donné n'est pas trouvé en BDD
+      } else {
+        res.json({
+          status: "failure",
+          reason: "name given is not in database"
+        });
+      }
     });
   } else {
     res.json({

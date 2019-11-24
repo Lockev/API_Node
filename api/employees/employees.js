@@ -63,38 +63,47 @@ routerEmployees.post("/", (req, res) => {
 routerEmployees.put("/", (req, res) => {
   let missingInfo = [];
   if (req.body.name !== undefined) {
-    // On check que l'on a le nom
+    // On check que l'on a un nom
     req.sql.query("SELECT * FROM employees WHERE name='" + req.body.name + "'", [req.body.name], (error, result) => {
       // On récupère les données de la ligne avant de la modifier
       let data = [];
       result.map(ele => data.push(ele));
+      // On verifie que le nom donné a été trouvé dans la BDD
+      if (data[0] !== undefined) {
+        // Le nom a été trouvé, on effectue la requete
+        let fullQuery = "UPDATE employees SET";
 
-      let fullQuery = "UPDATE employees SET";
+        if (req.body.seniority !== undefined) {
+          // On vérifie si le nom du client est modifié
+          fullQuery += " seniority='" + req.body.seniority + "',";
+        } else {
+          fullQuery += " seniority='" + data[0].seniority + "',";
+        }
 
-      if (req.body.seniority !== undefined) {
-        // On vérifie si le nom du client est modifié
-        fullQuery += " seniority='" + req.body.seniority + "',";
-      } else {
-        fullQuery += " seniority='" + data[0].seniority + "',";
-      }
+        if (req.body.salary !== undefined) {
+          // On vérifie si l'employé lié au projet est modifié
+          fullQuery += " salary='" + req.body.salary + "'";
+        } else {
+          fullQuery += " salary='" + data[0].salary + "'";
+        }
 
-      if (req.body.salary !== undefined) {
-        // On vérifie si l'employé lié au projet est modifié
-        fullQuery += " salary='" + req.body.salary + "'";
-      } else {
-        fullQuery += " salary='" + data[0].salary + "'";
-      }
-
-      fullQuery += " WHERE name='" + req.body.name + "'";
-      req.sql.query(fullQuery, [req.body.name, req.body.seniority, req.body.salary], (error, result) => {
-        res.json({
-          status: "success",
-          query: fullQuery
+        fullQuery += " WHERE name='" + req.body.name + "'";
+        req.sql.query(fullQuery, [req.body.name, req.body.seniority, req.body.salary], (error, result) => {
+          res.json({
+            status: "success",
+            query: fullQuery
+          });
         });
-      });
+        // Si le nom donné n'est pas trouvé en BDD
+      } else {
+        res.json({
+          status: "failure",
+          reason: "name given is not in database"
+        });
+      }
     });
   } else {
-    // On throw une erreur si on ne l'a pas
+    // On throw une erreur si aucun nom n'a été donné
     missingInfo.push("name");
     res.json({
       status: "failure",
@@ -109,12 +118,28 @@ routerEmployees.delete("/", (req, res) => {
     missingInfo.push("name");
   }
   if (missingInfo.length == 0) {
-    req.sql.query("DELETE FROM employees WHERE name='" + req.body.name + "'", (error, result) => {
-      req.sql.query("DELETE FROM projects WHERE employee='" + req.body.name + "'", (error, result) => {
-        res.json({
-          status: "success"
+    req.sql.query("SELECT * FROM employees WHERE name='" + req.body.name + "'", [req.body.name], (error, result) => {
+      // On verifie que le nom donné a été trouvé dans la BDD
+      let data = [];
+      result.map(ele => data.push(ele));
+
+      if (data[0] !== undefined) {
+        // Le nom a été trouvé, on effectue la requete
+        req.sql.query("DELETE FROM employees WHERE name='" + req.body.name + "'", (error, result) => {
+          req.sql.query("DELETE FROM projects WHERE employee='" + req.body.name + "'", (error, result) => {
+            res.json({
+              status: "success"
+            });
+          });
         });
-      });
+
+        // Si le nom donné n'est pas trouvé en BDD
+      } else {
+        res.json({
+          status: "failure",
+          reason: "name given is not in database"
+        });
+      }
     });
   } else {
     res.json({
