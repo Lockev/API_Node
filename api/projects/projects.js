@@ -2,23 +2,20 @@ const express = require("express");
 const routerProjects = express.Router();
 
 routerProjects.get("/", (req, res) => {
-  if (req.body.name !== null) {
-    // API De recherche d'un employé
-    req.sql.query("SELECT * FROM projects WHERE name='" + req.body.name + "'", (error, result) => {
+  if (req.query.name !== undefined) {
+    // API De recherche d'un projet
+    req.sql.query("SELECT * FROM projects WHERE name='" + req.query.name + "'", (error, result) => {
       let data = [];
       result.map(ele => data.push(ele));
-      //   req.sql.query("SELECT * FROM projects WHERE employee='" + req.body.name + "'", (error, result) => {
-      //     let data2 = [];
-      //     result.map(ele => data2.push(ele.name));
       res.json({
         name: data[0].name,
         "proposed by": data[0].client,
+        budget: data[0].budget,
         employee: data[0].employee
       });
-      //   });
     });
   } else {
-    // API De recherche de tous les employés
+    // API De recherche de tous les projets
     req.sql.query("SELECT * FROM projects", (error, result) => {
       let data = [];
       result.map(ele => data.push(ele.name));
@@ -31,19 +28,22 @@ routerProjects.get("/", (req, res) => {
 
 routerProjects.post("/", (req, res) => {
   let missingInfo = [];
-  if (req.body.name == null) {
+  if (req.body.name == undefined) {
     missingInfo.push("name");
   }
-  if (req.body.salary == null) {
-    missingInfo.push("salary");
+  if (req.body.client == undefined) {
+    missingInfo.push("client");
   }
-  if (req.body.seniority == null) {
-    missingInfo.push("seniority");
+  if (req.body.employee == undefined) {
+    missingInfo.push("employee");
+  }
+  if (req.body.budget == undefined) {
+    missingInfo.push("budget");
   }
   if (missingInfo.length == 0) {
     req.sql.query(
-      "INSERT INTO employees SET name = ?, salary = ?, seniority = ?",
-      [req.body.name, req.body.salary, req.body.seniority],
+      "INSERT INTO projects SET name = ?, client = ?, employee = ?, budget = ?",
+      [req.body.name, req.body.client, req.body.employee, req.body.budget],
       (error, result) => {
         res.json({
           status: "success"
@@ -60,26 +60,46 @@ routerProjects.post("/", (req, res) => {
 
 routerProjects.put("/", (req, res) => {
   let missingInfo = [];
-  if (req.body.name == null) {
-    missingInfo.push("name");
-  }
-  if (req.body.salary == null) {
-    missingInfo.push("salary");
-  }
-  if (req.body.seniority == null) {
-    missingInfo.push("seniority");
-  }
-  if (missingInfo.length == 0) {
-    req.sql.query(
-      "UPDATE employees SET salary ='" + req.body.salary + "', seniority = '" + req.body.seniority + "' WHERE name='" + req.body.name + "'",
-      [req.body.name, req.body.salary, req.body.seniority],
-      (error, result) => {
+  if (req.body.name !== undefined) {
+    // On check que l'on a le nom
+    req.sql.query("SELECT * FROM projects WHERE name='" + req.body.name + "'", [req.body.name], (error, result) => {
+      // On récupère les données de la ligne avant de la modifier
+      let data = [];
+      result.map(ele => data.push(ele));
+
+      let fullQuery = "UPDATE projects SET";
+
+      if (req.body.client !== undefined) {
+        // On vérifie si le nom du client est modifié
+        fullQuery += " client='" + req.body.client + "',";
+      } else {
+        fullQuery += " client='" + data[0].client + "',";
+      }
+
+      if (req.body.employee !== undefined) {
+        // On vérifie si l'employé lié au projet est modifié
+        fullQuery += " employee='" + req.body.employee + "',";
+      } else {
+        fullQuery += " employee='" + data[0].employee + "',";
+      }
+
+      if (req.body.budget !== undefined) {
+        // On vérifie si le budget est modifié
+        fullQuery += " budget='" + req.body.budget + "'";
+      } else {
+        fullQuery += " budget='" + data[0].budget + "'";
+      }
+
+      fullQuery += " WHERE name='" + req.body.name + "'";
+      req.sql.query(fullQuery, [req.body.name, req.body.client, req.body.employee, req.body.budget], (error, result) => {
         res.json({
           status: "success"
         });
-      }
-    );
+      });
+    });
   } else {
+    // On throw une erreur si on ne l'a pas
+    missingInfo.push("name");
     res.json({
       status: "failure",
       error: "Missing info: " + missingInfo.join(", ")
@@ -89,15 +109,13 @@ routerProjects.put("/", (req, res) => {
 
 routerProjects.delete("/", (req, res) => {
   let missingInfo = [];
-  if (req.body.name == null) {
+  if (req.body.name == undefined) {
     missingInfo.push("name");
   }
   if (missingInfo.length == 0) {
-    req.sql.query("DELETE FROM employees WHERE name='" + req.body.name + "'", (error, result) => {
-      req.sql.query("DELETE FROM projects WHERE employee='" + req.body.name + "'", (error, result) => {
-        res.json({
-          status: "success"
-        });
+    req.sql.query("DELETE FROM projects WHERE name='" + req.body.name + "'", (error, result) => {
+      res.json({
+        status: "success"
       });
     });
   } else {

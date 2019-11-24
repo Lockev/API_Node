@@ -2,24 +2,23 @@ const express = require("express");
 const routerClients = express.Router();
 
 routerClients.get("/", (req, res) => {
-  if (req.body.name !== null) {
-    // API De recherche d'un employé
-    req.sql.query("SELECT * FROM clients WHERE name='" + req.body.name + "'", (error, result) => {
+  if (req.query.name !== undefined) {
+    // API De recherche d'un client
+    req.sql.query("SELECT * FROM clients WHERE name='" + req.query.name + "'", (error, result) => {
       let data = [];
       result.map(ele => data.push(ele));
-      req.sql.query("SELECT name FROM projects WHERE client='" + req.body.name + "'", (error, result) => {
+      req.sql.query("SELECT name FROM projects WHERE client='" + req.query.name + "'", (error, result) => {
         let data2 = [];
-        result.map(ele => data2.push(ele.client));
+        result.map(ele => data2.push(ele.name));
         res.json({
-          data: data
-          //   name: data[0].name,
-          //   proposed: data2,
-          //   contact: data[0].contact
+          name: data[0].name,
+          proposed: data2,
+          contact: data[0].contact
         });
       });
     });
   } else {
-    // API De recherche de tous les employés
+    // API De recherche de tous les clients
     req.sql.query("SELECT * FROM clients", (error, result) => {
       let data = [];
       result.map(ele => data.push(ele.name));
@@ -32,25 +31,18 @@ routerClients.get("/", (req, res) => {
 
 routerClients.post("/", (req, res) => {
   let missingInfo = [];
-  if (req.body.name == null) {
+  if (req.body.name == undefined) {
     missingInfo.push("name");
   }
-  if (req.body.salary == null) {
-    missingInfo.push("salary");
-  }
-  if (req.body.seniority == null) {
-    missingInfo.push("seniority");
+  if (req.body.contact == undefined) {
+    missingInfo.push("contact");
   }
   if (missingInfo.length == 0) {
-    req.sql.query(
-      "INSERT INTO employees SET name = ?, salary = ?, seniority = ?",
-      [req.body.name, req.body.salary, req.body.seniority],
-      (error, result) => {
-        res.json({
-          status: "success"
-        });
-      }
-    );
+    req.sql.query("INSERT INTO clients SET name = ?, contact = ?", [req.body.name, req.body.contact], (error, result) => {
+      res.json({
+        status: "success"
+      });
+    });
   } else {
     res.json({
       status: "failure",
@@ -61,26 +53,23 @@ routerClients.post("/", (req, res) => {
 
 routerClients.put("/", (req, res) => {
   let missingInfo = [];
-  if (req.body.name == null) {
-    missingInfo.push("name");
-  }
-  if (req.body.salary == null) {
-    missingInfo.push("salary");
-  }
-  if (req.body.seniority == null) {
-    missingInfo.push("seniority");
-  }
-  if (missingInfo.length == 0) {
-    req.sql.query(
-      "UPDATE employees SET salary ='" + req.body.salary + "', seniority = '" + req.body.seniority + "' WHERE name='" + req.body.name + "'",
-      [req.body.name, req.body.salary, req.body.seniority],
-      (error, result) => {
-        res.json({
-          status: "success"
-        });
-      }
-    );
+  if (req.body.name !== undefined) {
+    // On check que l'on a le nom
+    if (req.body.contact !== undefined) {
+      // Si on n'update pas le contact
+      req.sql.query(
+        "UPDATE clients SET contact = '" + req.body.contact + "' WHERE name='" + req.body.name + "'",
+        [req.body.name, req.body.contact],
+        (error, result) => {
+          res.json({
+            status: "success"
+          });
+        }
+      );
+    }
   } else {
+    // On throw une erreur si on ne l'a pas
+    missingInfo.push("name");
     res.json({
       status: "failure",
       error: "Missing info: " + missingInfo.join(", ")
@@ -90,12 +79,12 @@ routerClients.put("/", (req, res) => {
 
 routerClients.delete("/", (req, res) => {
   let missingInfo = [];
-  if (req.body.name == null) {
+  if (req.body.name == undefined) {
     missingInfo.push("name");
   }
   if (missingInfo.length == 0) {
-    req.sql.query("DELETE FROM employees WHERE name='" + req.body.name + "'", (error, result) => {
-      req.sql.query("DELETE FROM projects WHERE employee='" + req.body.name + "'", (error, result) => {
+    req.sql.query("DELETE FROM clients WHERE name='" + req.body.name + "'", (error, result) => {
+      req.sql.query("DELETE FROM projects WHERE client='" + req.body.name + "'", (error, result) => {
         res.json({
           status: "success"
         });
